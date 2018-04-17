@@ -3,16 +3,134 @@ title: "Muvit: Traffic patterns and pollution"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+## Introduction
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+> Describe los datos, es decir, que información contiene y de donde obtuviste la base de datos que vas a utilizar. Incluye una descripción del problema (preguntas que quieren resolver).
 
-```{r}
-plot(cars)
+<!-- Some intro on why we should be analyzing traffic pattern data -->
+
+### Downloading the data
+
+The pollution data was downloaded using the following bash script: 
+
+```bash
+#/bin/bash
+count=0
+NAM=("santacatarina" "sanbernabe" "obispado" "sannicolas" "pastora" "escobedo" "garcia" "juarez" "sanpedro" "universidad" "puebloserena")
+ARR=(31 33 24 28 30 15 22 30 29 19 15)
+for a in 139 140 141 142 143 144 145 147 148 425 426; do
+		mkdir ${NAM[$count]}
+		for i in `seq 1 ${ARR[$count]}`; do
+				printf -v j "%02d" $i
+				echo "${NAM[$count]}/page_$j.json"
+				curl -o "${NAM[$count]}/page_$j.json" "https://api.datos.gob.mx/v2/sinaica?estacionesid=$a&pageSize=1000&page=$i"
+		done
+		count=$((count+1))
+done
+
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+### Requirements
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+First we'll load the libraries. We'll be using them for data manipulation, json parsing and graphing, respectively. 
+
+```{r}
+library(dplyr)
+library(jsonlite)
+library(ggplot2)
+```
+
+
+### Reading in the data 
+
+
+#### Pollution
+
+```{r}
+dirs <- list.dirs(recursive = FALSE)
+pollution <- do.call(bind_rows, lapply(dirs, function(x){
+	files <- dir(x)
+	do.call(bind_rows, lapply(files, function(y){
+		fromJSON(readLines( paste0(x, "/", y) ))$results
+	}))
+}))
+```
+
+
+
+## Exploratory Analysis
+
+One of the biggest challenges of using the SINAICA pollution data is that their API is not documented anywhere, so we have to look at the data to find out what we've got. 
+
+
+```{r}
+str(pollution)
+```
+
+We've got 288K+ rows and 12 columns, which is decently sized. We now coerce the columns into their correct data types, namely the `fecha`, `date` and `date-insert` columns. 
+
+```{r}
+pollution$fecha <- as.Date(pollution$fecha)
+pollution$parametro <- as.factor(pollution$parametro)
+pollution$estacionesid <- as.factor(pollution$estacionesid)
+pollution$`date-insert` <- as.POSIXct(pollution$`date-insert`, format="%Y-%m-%dT%H:%M:%OSZ", tz="GMT")
+```
+
+
+We can already see from the data that `_id` (it's a MongoDB-generated identifier), `city`, and `state` will probably not be useful, but we can confirm that, and we need to inspect `date` to see what type of data it holds:
+
+```{r}
+unique(pollution$city) # All possible values of city
+unique(pollution$state) # All possible values of state
+head(pollution$date[!is.na(pollution$date)]) # first values where `date` isn't NA
+```
+
+
+We already know that we're working with Monterrey, Nuevo Leon, so we can omit that. `date` has more datetime information, so we can coerce that as well:
+
+```{r}
+pollution <- select(pollution, -city, -state, -`_id`)
+pollution$date <- as.POSIXct(pollution$date, format="%Y-%m-%dT%H:%M:%OSZ", tz="GMT")
+str(pollution)
+```
+
+
+
+Descripción de los datos
+Describe los datos que seleccionaste para el proyecto. ¿Porque estos datos? Menciona toda las variables (columnas) y que es lo que representan cada una de ellas.
+
+Objetivo
+Qué preguntas tienes, que quieres saber.
+
+Selección
+Revisa los datos que encontraste. ¿Están limpios? ¿Completos? ¿Cuáles son relevantes? ¿Cómo procedieron a preparar los datos para la exploración.
+
+
+
+
+
+
+## Bayesian Network Analysis
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
