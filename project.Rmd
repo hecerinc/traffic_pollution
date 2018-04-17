@@ -171,6 +171,8 @@ The pollutants are then explained by the following table:
 | `date` | _Missing_ |
 
 
+Those statisticla
+
 
 ### Traffic Jams (Waze)
 
@@ -179,14 +181,119 @@ Qué preguntas tienes, que quieres saber.
 
 
 
+## Statistical Analysis
+
+To run a thorough statistical analysis, we will need to load a few more libraries:
+
+```{r}
+library(nortest)
+library(moments)
+```
+
+
+### Descriptive statistics
+
+#### Pollution
+
+```{r}
+pollutants <- levels(pollution$parametro)
+```
+
+
+```{r}
+calculateStats <- function(pollutant) {
+	poll <- filter(pollution, parametro == pollutant)
+	data.frame(pollutant = pollutant, mean = mean(poll$valororig, na.rm=T), variance = var(poll$valororig, na.rm=T), standard.deviation = sd(poll$valororig, na.rm=T), skewness = skewness(poll$valororig, na.rm=T), kurtosis = kurtosis(poll$valororig, na.rm=T))
+}
+```
+
+
+```{r}
+do.call(rbind, lapply(pollutants, calculateStats))
+```
+
+##### Histograms
+
+```{r}
+theme_update(plot.title = element_text(hjust = 0.5)) # set titles centered
+```
+
+
+```{r}
+hists <- ggplot(pollution, aes(valororig))
+hists + geom_histogram(binwidth=.5)
+```
+
+**1. PM 2.5**
+
+```{r}
+ggplot(pollution[pollution$parametro == "PM2.5", ], aes(valororig)) + geom_histogram(binwidth=2, fill="steelblue") + coord_cartesian(xlim = c(0, 100)) + labs(title = "PM2.5", y = "Frequency", x = "Measurement")
+```
+
+**2. CO**
+
+```{r}
+ggplot(pollution[pollution$parametro == "CO" & pollution$valororig >= 0, ], aes(valororig)) + geom_histogram(binwidth=.5, fill="steelblue") + coord_cartesian(xlim = c(0, 10)) + labs(title = "Carbon Monoxide (CO)", y = "Frequency", x = "Measurement")
+```
+
+**3.NO2**
+
+```{r}
+ggplot(filter(pollution, parametro == "NO2"), aes(valororig)) + geom_histogram(fill="steelblue") + labs(title = "Nitrogen Dioxide (NO2)", y = "Frequency", x = "Measurement")
+```
+
+
+**4. O3**
+
+```{r}
+ggplot(filter(pollution, parametro == "O3"), aes(valororig)) + geom_histogram(bins=30, fill="steelblue") + labs(title = "Ozone (O3)", y = "Frequency", x = "Measurement")
+```
+
+**5. PM10**
+
+```{r}
+ggplot(filter(pollution, parametro == "PM10"), aes(valororig)) + geom_histogram(fill="steelblue", binwidth=5) + labs(title = "PM10", y = "Frequency", x = "Measurement") 
+```
+
+It's very interesting to note here that the tail runs really long because of some very high values. It's very unusual having such high values for PM10, but since we have a lot of them we can't discard them just yet.
+
+```{r}
+head(arrange(filter(pollution, parametro == "PM10"), -valororig), 15)
+```
+
+
+
+**6. SO2**
+
+```{r}
+ggplot(filter(pollution, parametro == "SO2"), aes(valororig)) + geom_histogram(fill="steelblue", bins = 60) + labs(title = "Sulfur Dioxide (SO2)", y = "Frequency", x = "Measurement") + coord_cartesian(xlim = c(0, .05))
+```
+
+
+**7. TMP**
+```{r}
+ggplot(filter(pollution, parametro == "TMP"), aes(valororig)) + geom_histogram(fill="steelblue", bins=30) + labs(title = "Temperature (TMP)", y = "Frequency", x = "Measurement")
+```
+
+
+#### Waze
+
+
+
+### Data normality
+
+### Distribution adjustment
+
+### Critical variable
 
 
 ## Bayesian Network Analysis
 
 
 
+## Discussion
 
-
+## Conclusions
 
 
 
