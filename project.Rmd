@@ -186,6 +186,7 @@ Qué preguntas tienes, que quieres saber.
 To run a thorough statistical analysis, we will need to load a few more libraries:
 
 ```{r}
+options(scipen=999) # Disable scientific notation
 library(nortest)
 library(moments)
 ```
@@ -211,6 +212,10 @@ calculateStats <- function(pollutant) {
 ```{r}
 do.call(rbind, lapply(pollutants, calculateStats))
 ```
+
+# INTERPRETATION HERE
+
+> De las variables que consideraste interesantes en la etapa 1. Incluye en esta sección la interpretación de los estadísticos descriptivos sobre dichas variables. Para cada una de las variables, incluye también tu inferencia sobre que distribución de probabilidad explica el comportamiento de la variable.
 
 ##### Histograms
 
@@ -282,7 +287,143 @@ ggplot(filter(pollution, parametro == "TMP"), aes(valororig)) + geom_histogram(f
 
 ### Data normality
 
+We can now do a more formal assesment of the normality of each variable.
+
+```{r}
+ggplot(pollution, aes(sample=valororig)) + stat_qq(size=.5) + facet_wrap('parametro', ncol=3, scales="free")
+```
+
+From visual inspection we can see that very few of our variables behave normally.
+
+Running the Shapiro-Wilk test for random samples: 
+
+```{r}
+options(scipen=10)
+normalvalues <- do.call(rbind, lapply(pollutants, function(poll) data.frame(t(replicate(10, shapiro.test(sample_n(filter(pollution, parametro == poll), 2000)$valororig)$p.value)))))
+cbind(pollutants, normalvalues)
+```
+
+The Shapiro-Wilks test shows that for every single run of randomly sample values (2K because it has an uppper limit of 5K and we have a lot more data points), the null hypothesis is rejected (i.e. the p-value is < 0.5), hence none of the random variables in the pollution dataset behave normally.
+
+
+
+
+
 ### Distribution adjustment
+
+```{r}
+library(fitdistrplus)
+library(actuar) # pareto and weibull
+```
+
+
+We'll now attempt to adjust the data to each of the following distributions:
+
+i)	Exponencial
+ii)	Gamma
+iii) Weibull
+iv)	Lognormal
+v)	Pareto
+
+
+```{r}
+memp <- function(x, order) mean(x^order)
+```
+
+
+
+```{r}
+exponentials <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "exp"))
+```
+
+```{r}
+gammas <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "gamma", lower=c(0,0), method="mle"))
+```
+
+```{r}
+weibulls <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "weibull", lower=c(0,0)))
+```
+
+```{r}
+lnorms <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "lnorm"))
+```
+
+```{r}
+paretos <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "pareto", start=list(shape=10, scale=500), lower=1, upper=Inf))
+```
+
+#### CO
+
+
+```{r fig1, fig.width=10}
+par(mfrow = c(1, 2))
+plot.legend <- c("Exponential", "Gamma", "Weibull", "lognormal", "Pareto")
+fits.cos <- list(exponentials[[1]], gammas[[1]], weibulls[[1]], lnorms[[1]], paretos[[1]])
+denscomp(fits.cos, legendtext = plot.legend)
+qqcomp(fits.cos, legendtext = plot.legend)
+
+```
+
+
+#### NO2
+
+```{r fig2, fig.width=10}
+par(mfrow = c(1, 2))
+plot.legend <- c("Exponential", "Gamma", "Weibull", "lognormal", "Pareto")
+fits.nos <- list(exponentials[[2]], gammas[[2]], weibulls[[2]], lnorms[[2]], paretos[[2]])
+denscomp(fits.nos, legendtext = plot.legend)
+qqcomp(fits.nos, legendtext = plot.legend)
+```
+
+#### O3
+
+```{r fig3, fig.width=10}
+par(mfrow = c(1, 2))
+fits.o3 <- list(exponentials[[3]], gammas[[3]], weibulls[[3]], lnorms[[3]], paretos[[3]])
+denscomp(fits.o3, legendtext = plot.legend)
+qqcomp(fits.o3, legendtext = plot.legend)
+```
+
+#### PM10
+
+```{r fig4, fig.width=10}
+par(mfrow = c(1, 2))
+fits.pm10 <- list(exponentials[[4]], gammas[[4]], weibulls[[4]], lnorms[[4]], paretos[[4]])
+denscomp(fits.pm10, legendtext = plot.legend)
+qqcomp(fits.pm10, legendtext = plot.legend)
+```
+
+#### PM2.5
+
+```{r fig5, fig.width=10}
+par(mfrow = c(1, 2))
+fits.pm25 <- list(exponentials[[5]], gammas[[5]], weibulls[[5]], lnorms[[5]], paretos[[5]])
+denscomp(fits.pm25, legendtext = plot.legend)
+qqcomp(fits.pm25, legendtext = plot.legend)
+```
+
+#### SO2
+
+```{r fig6, fig.width=10}
+par(mfrow = c(1, 2))
+fits.so2 <- list(exponentials[[6]], gammas[[6]], weibulls[[6]], lnorms[[6]], paretos[[6]])
+denscomp(fits.so2, legendtext = plot.legend)
+qqcomp(fits.so2, legendtext = plot.legend)
+```
+
+
+#### TMP
+
+```{r fig7, fig.width=10}
+par(mfrow = c(1, 2))
+fits.tmp <- list(exponentials[[7]], gammas[[7]], weibulls[[7]], lnorms[[7]], paretos[[7]])
+denscomp(fits.tmp, legendtext = plot.legend)
+qqcomp(fits.tmp, legendtext = plot.legend)
+```
+
+
+
+
 
 ### Critical variable
 
