@@ -224,14 +224,10 @@ theme_update(plot.title = element_text(hjust = 0.5)) # set titles centered
 ```
 
 
-```{r}
-hists <- ggplot(pollution, aes(valororig))
-hists + geom_histogram(binwidth=.5)
-```
 
 **1. PM 2.5**
 
-```{r}
+```{r fig8, fig.align="center"}
 ggplot(pollution[pollution$parametro == "PM2.5", ], aes(valororig)) + geom_histogram(binwidth=2, fill="steelblue") + coord_cartesian(xlim = c(0, 100)) + labs(title = "PM2.5", y = "Frequency", x = "Measurement")
 ```
 
@@ -289,7 +285,7 @@ ggplot(filter(pollution, parametro == "TMP"), aes(valororig)) + geom_histogram(f
 
 We can now do a more formal assesment of the normality of each variable.
 
-```{r}
+```{r fig11, fig.width=10}
 ggplot(pollution, aes(sample=valororig)) + stat_qq(size=.5) + facet_wrap('parametro', ncol=3, scales="free")
 ```
 
@@ -303,7 +299,7 @@ normalvalues <- do.call(rbind, lapply(pollutants, function(poll) data.frame(t(re
 cbind(pollutants, normalvalues)
 ```
 
-The Shapiro-Wilks test shows that for every single run of randomly sample values (2K because it has an uppper limit of 5K and we have a lot more data points), the null hypothesis is rejected (i.e. the p-value is < 0.5), hence none of the random variables in the pollution dataset behave normally.
+The Shapiro-Wilks test shows that for every single run of randomly sampled values (2K because it has an uppper limit of 5K and we have a lot more data points), the null hypothesis is rejected (i.e. the p-value is < 0.5), hence none of the random variables in the pollution dataset behave normally.
 
 
 
@@ -326,101 +322,137 @@ iv)	Lognormal
 v)	Pareto
 
 
-```{r}
-memp <- function(x, order) mean(x^order)
-```
-
-
 
 ```{r}
 exponentials <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "exp"))
-```
 
-```{r}
 gammas <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "gamma", lower=c(0,0), method="mle"))
-```
 
-```{r}
 weibulls <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "weibull", lower=c(0,0)))
-```
 
-```{r}
 lnorms <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "lnorm"))
-```
 
-```{r}
 paretos <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "pareto", start=list(shape=10, scale=500), lower=1, upper=Inf))
 ```
 
 #### CO
 
 
-```{r fig1, fig.width=10}
-par(mfrow = c(1, 2))
+```{r fig1, fig.width=10, fig.height = 8}
+par(mfrow = c(2, 2))
 plot.legend <- c("Exponential", "Gamma", "Weibull", "lognormal", "Pareto")
 fits.cos <- list(exponentials[[1]], gammas[[1]], weibulls[[1]], lnorms[[1]], paretos[[1]])
 denscomp(fits.cos, legendtext = plot.legend)
 qqcomp(fits.cos, legendtext = plot.legend)
-
+cdfcomp(fits.cos, legendtext = plot.legend)
+ppcomp(fits.cos, legendtext = plot.legend)
 ```
+
+```{r}
+gofstat(fits.cos, fitnames=plot.legend)
+```
+
 
 
 #### NO2
 
-```{r fig2, fig.width=10}
-par(mfrow = c(1, 2))
+```{r fig2, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
 plot.legend <- c("Exponential", "Gamma", "Weibull", "lognormal", "Pareto")
 fits.nos <- list(exponentials[[2]], gammas[[2]], weibulls[[2]], lnorms[[2]], paretos[[2]])
 denscomp(fits.nos, legendtext = plot.legend)
 qqcomp(fits.nos, legendtext = plot.legend)
+cdfcomp(fits.nos, legendtext = plot.legend)
+ppcomp(fits.nos, legendtext = plot.legend)
 ```
+
+```{r}
+gofstat(fits.nos, fitnames=plot.legend)
+```
+
+
 
 #### O3
 
-```{r fig3, fig.width=10}
-par(mfrow = c(1, 2))
+```{r fig3, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
 fits.o3 <- list(exponentials[[3]], gammas[[3]], weibulls[[3]], lnorms[[3]], paretos[[3]])
 denscomp(fits.o3, legendtext = plot.legend)
 qqcomp(fits.o3, legendtext = plot.legend)
+cdfcomp(fits.o3, legendtext = plot.legend)
+ppcomp(fits.o3, legendtext = plot.legend)
 ```
+
+```{r}
+gofstat(fits.o3, fitnames = plot.legend)
+```
+
+
 
 #### PM10
 
-```{r fig4, fig.width=10}
-par(mfrow = c(1, 2))
+```{r fig4, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
 fits.pm10 <- list(exponentials[[4]], gammas[[4]], weibulls[[4]], lnorms[[4]], paretos[[4]])
 denscomp(fits.pm10, legendtext = plot.legend)
 qqcomp(fits.pm10, legendtext = plot.legend)
+cdfcomp(fits.pm10, legendtext = plot.legend)
+ppcomp(fits.pm10, legendtext = plot.legend)
 ```
+
+```{r}
+gofstat(fits.pm10, fitnames=plot.legend)
+```
+
+
 
 #### PM2.5
 
-```{r fig5, fig.width=10}
-par(mfrow = c(1, 2))
+```{r fig5, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
 fits.pm25 <- list(exponentials[[5]], gammas[[5]], weibulls[[5]], lnorms[[5]], paretos[[5]])
 denscomp(fits.pm25, legendtext = plot.legend)
 qqcomp(fits.pm25, legendtext = plot.legend)
+cdfcomp(fits.pm25, legendtext = plot.legend)
+ppcomp(fits.pm25, legendtext = plot.legend)
 ```
+
+```{r}
+gofstat(fits.pm25, fitnames=plot.legend)
+```
+
 
 #### SO2
 
-```{r fig6, fig.width=10}
-par(mfrow = c(1, 2))
+```{r fig6, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
 fits.so2 <- list(exponentials[[6]], gammas[[6]], weibulls[[6]], lnorms[[6]], paretos[[6]])
 denscomp(fits.so2, legendtext = plot.legend)
 qqcomp(fits.so2, legendtext = plot.legend)
+cdfcomp(fits.so2, legendtext = plot.legend)
+ppcomp(fits.so2, legendtext = plot.legend)
+```
+
+
+```{r}
+gofstat(fits.so2, fitnames = plot.legend)
 ```
 
 
 #### TMP
 
-```{r fig7, fig.width=10}
-par(mfrow = c(1, 2))
+```{r fig7, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
 fits.tmp <- list(exponentials[[7]], gammas[[7]], weibulls[[7]], lnorms[[7]], paretos[[7]])
 denscomp(fits.tmp, legendtext = plot.legend)
 qqcomp(fits.tmp, legendtext = plot.legend)
+cdfcomp(fits.tmp, legendtext = plot.legend)
+ppcomp(fits.tmp, legendtext = plot.legend)
 ```
 
+```{r}
+gofstat(fits.tmp, fitnames = plot.legend)
+```
 
 
 
