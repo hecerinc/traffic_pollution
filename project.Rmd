@@ -228,7 +228,8 @@ theme_update(plot.title = element_text(hjust = 0.5)) # set titles centered
 **1. PM 2.5**
 
 ```{r fig8, fig.align="center"}
-ggplot(pollution[pollution$parametro == "PM2.5", ], aes(valororig)) + geom_histogram(binwidth=2, fill="steelblue") + coord_cartesian(xlim = c(0, 100)) + labs(title = "PM2.5", y = "Frequency", x = "Measurement")
+pm25.hist <- ggplot(pollution[pollution$parametro == "PM2.5", ], aes(valororig)) + geom_histogram(binwidth=2, fill="steelblue") + coord_cartesian(xlim = c(0, 100)) + labs(title = "PM2.5", y = "Frequency", x = "Measurement")
+pm25.hist
 ```
 
 **2. CO**
@@ -353,6 +354,15 @@ gofstat(fits.cos, fitnames=plot.legend)
 ```
 
 
+For Carbon Monoxide, the plots suggest it is closer to a Weibull distribution, as evidenced by the CDF plot. This result is further supported by the KS statistic, which has the lowest value at the Weibull. However, this test is not statistically significant for an alpha of 0.5, which is evident from the Q-Q plot (quantile-quantile), and the Anderson-Darling statistics, which show very elevated values and emphasize the lack-of-fit at the talis of the distributions. 
+
+For the evaluated distributions then, we cannot confidently say that Carbon Monoxide readings approach any of these distributions' behaviours.
+
+We then need must try to fit the data to another distribution that might better explain the data.
+
+# FUTHER FITTING
+
+
 
 #### NO2
 
@@ -370,7 +380,9 @@ ppcomp(fits.nos, legendtext = plot.legend)
 gofstat(fits.nos, fitnames=plot.legend)
 ```
 
+For **Nitrogen Dioxide**, the KS statistic gives the lowest value for the lognormal distribution. As with carbon monoxide, however, this value is still not significant enough to accept the null hypothesis, and although the AD statistic is the lowest for this particular distribution, it is a poor fit for both tails and distribution center.
 
+# FURTHER exploration
 
 #### O3
 
@@ -387,6 +399,9 @@ ppcomp(fits.o3, legendtext = plot.legend)
 gofstat(fits.o3, fitnames = plot.legend)
 ```
 
+For **Ozone** (O3), it is immediately evident from all four plots that the readings approach a Weibull or Gamma distribution. Choosing between the two is not as evident a task, as both the KS test and the Cramer-von Mises test suggest the Weibull has a better fit, while the Anderson-Darling, AIC, and BIC values suggest the Gamma is a better fit (although the latter two by a very small margin).
+
+In this case, the Q-Q plot suggests a better fit at the tails for the Weibull, while the P-P plot suggests very similar fits for the distribution centers, so we shall choose the **Weibull**.
 
 
 #### PM10
@@ -405,6 +420,10 @@ gofstat(fits.pm10, fitnames=plot.legend)
 ```
 
 
+For **PM10** values, the readings are very clearly best approached by the **lognormal**, as is suggested by the KS statistic, where the lognormal is the only statistically significant value. The Cramer-von Mises (CVM) and Anderson-Darling (AD) statistics, as well as the AIC and BIC, all further support this statement.
+
+An interesting thing to note is that the Q-Q plot suggests high lack-of-fit for all 5 fitted distributions at the tails, which is probably explained by the high right-skewed behaviour of the data, which is highly concentrated on smaller values.
+
 
 #### PM2.5
 
@@ -420,6 +439,17 @@ ppcomp(fits.pm25, legendtext = plot.legend)
 ```{r}
 gofstat(fits.pm25, fitnames=plot.legend)
 ```
+
+PM 2.5 values are also very highly concentrated on smaller values, with a few exceptions of really high readings, which can be better appreciated in the previous histogram, which focused on the smaller values:
+
+```{r fig12, fig.width = 4}
+pm25.hist
+```
+
+Whilst the KS and CVM sstatistics suggest a Weibull approximation, they're not statistically significant, evidenced by the AD value which (at Inf), suggest a terrible approximation at the distribution tails. It's interesting to note that while the KS and CVM suggest a Weibull distribution, followed perhaps by the Gamma, both the AIC and BIC criteria suggest a lognormal to be a better fit. 
+
+
+# ADJUSTING FOR SOME OTHER DISTRIBUTIONS,
 
 
 #### SO2
@@ -439,6 +469,11 @@ gofstat(fits.so2, fitnames = plot.legend)
 ```
 
 
+For **Sulfur Dioxide**, the KS statistic best approaches a **lognormal** distribution, a theory that's supported by the CVM and AD statistics, as well as the AIC and BIC. Note that the KS statistic is not entirely within the non-rejection threshold, which is evidenced by the Q-Q plot which suggests lack-of-fit at the distribution tails and which can be in turn plainly seen in both the CDF and density plots.
+
+
+
+
 #### TMP
 
 ```{r fig7, fig.width=10, fig.height=8}
@@ -454,7 +489,7 @@ ppcomp(fits.tmp, legendtext = plot.legend)
 gofstat(fits.tmp, fitnames = plot.legend)
 ```
 
-
+For **temperature** (TMP), the statistics, criteria and graphs all immediately suggest a **Weibull** distribution.
 
 
 ### Critical variable
