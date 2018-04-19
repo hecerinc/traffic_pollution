@@ -336,6 +336,7 @@ lnorms <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro 
 paretos <- lapply(pollutants, function(poll) fitdist(filter(pollution, parametro == poll & valororig > 0)$valororig, "pareto", start=list(shape=10, scale=500), lower=1, upper=Inf))
 ```
 
+
 #### CO
 
 
@@ -354,13 +355,9 @@ gofstat(fits.cos, fitnames=plot.legend)
 ```
 
 
-For Carbon Monoxide, the plots suggest it is closer to a Weibull distribution, as evidenced by the CDF plot. This result is further supported by the KS statistic, which has the lowest value at the Weibull. However, this test is not statistically significant for an alpha of 0.5, which is evident from the Q-Q plot (quantile-quantile), and the Anderson-Darling statistics, which show very elevated values and emphasize the lack-of-fit at the talis of the distributions. 
+For Carbon Monoxide, the plots suggest it is closer to a **Weibull** distribution, as evidenced by the CDF plot. This result is further supported by the KS statistic, which has the lowest value at the Weibull. In particular, the KS test is not statistically significant, which is evident from the Q-Q plot (quantile-quantile), and the Anderson-Darling statistics, which show very elevated values and emphasize the lack-of-fit at the tails of the distributions. 
 
-For the evaluated distributions then, we cannot confidently say that Carbon Monoxide readings approach any of these distributions' behaviours.
-
-We then need must try to fit the data to another distribution that might better explain the data.
-
-# FUTHER FITTING
+However, both the Akaike Information Criterion (AIC) and the Bayesian Information Criterion give the best fit for the Weibull as well.
 
 
 
@@ -380,9 +377,9 @@ ppcomp(fits.nos, legendtext = plot.legend)
 gofstat(fits.nos, fitnames=plot.legend)
 ```
 
-For **Nitrogen Dioxide**, the KS statistic gives the lowest value for the lognormal distribution. As with carbon monoxide, however, this value is still not significant enough to accept the null hypothesis, and although the AD statistic is the lowest for this particular distribution, it is a poor fit for both tails and distribution center.
+For **Nitrogen Dioxide**, the all three statistics give the lowest value for the **lognormal** distribution. Note that the value is no entirely within non-rejection threshold, but both criteria further support the adjustment.
 
-# FURTHER exploration
+
 
 #### O3
 
@@ -446,10 +443,7 @@ PM 2.5 values are also very highly concentrated on smaller values, with a few ex
 pm25.hist
 ```
 
-Whilst the KS and CVM sstatistics suggest a Weibull approximation, they're not statistically significant, evidenced by the AD value which (at Inf), suggest a terrible approximation at the distribution tails. It's interesting to note that while the KS and CVM suggest a Weibull distribution, followed perhaps by the Gamma, both the AIC and BIC criteria suggest a lognormal to be a better fit. 
-
-
-# ADJUSTING FOR SOME OTHER DISTRIBUTIONS,
+Whilst the KS and CVM statistics suggest a Weibull approximation for **PM2.5** data, the AD value (at Inf), suggests a terrible approximation at the distribution tails. It's interesting to note that while the KS and CVM suggest a Weibull distribution, followed perhaps by the Gamma, both the AIC and BIC criteria suggest a **lognormal** to be a better fit.
 
 
 #### SO2
@@ -490,6 +484,7 @@ gofstat(fits.tmp, fitnames = plot.legend)
 ```
 
 For **temperature** (TMP), the statistics, criteria and graphs all immediately suggest a **Weibull** distribution.
+
 
 
 ### Critical variable
