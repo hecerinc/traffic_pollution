@@ -5,9 +5,15 @@ output: html_notebook
 
 ## Introduction
 
-> Describe los datos, es decir, que información contiene y de donde obtuviste la base de datos que vas a utilizar. Incluye una descripción del problema (preguntas que quieren resolver).
 
-<!-- Some intro on why we should be analyzing traffic pattern data -->
+Analysis questions: 
+
+1. How is traffic behaviour correlated with pollutants in the atmosphere?
+2. How does this vary by season?
+3. Given a set of traffic patterns in a given time range, can you accurately predict the pollution levels for that area? (or are more factors involved?) (i.e. is traffic a good predictor for pollution)
+4. Is pollution level a measurable proxy for traffic?
+
+<!-- TODO: Some intro on why we should be analyzing traffic pattern data -->
 
 ### Downloading the data
 
@@ -39,10 +45,11 @@ First we'll load the libraries. We'll be using them for data manipulation, json 
 library(dplyr)
 library(jsonlite)
 library(ggplot2)
+setwd("~/metodos") # set working directory
 ```
 
 
-### Reading in the data 
+### Reading in the data
 
 
 #### Pollution
@@ -171,13 +178,18 @@ The pollutants are then explained by the following table:
 | `date` | _Missing_ |
 
 
-Those statisticla
+
+Once we know what our data looks like, some reasonable questions to ask is, do we have any missing data?
+
+```{r}
+sum(is.na(pollution$valororig))
+```
 
 
-### Traffic Jams (Waze)
 
-Objetivo
-Qué preguntas tienes, que quieres saber.
+# Traffic Jams (Waze)
+
+
 
 
 
@@ -282,7 +294,7 @@ ggplot(filter(pollution, parametro == "TMP"), aes(valororig)) + geom_histogram(f
 
 
 
-### Data normality
+### Testing for normality
 
 We can now do a more formal assesment of the normality of each variable.
 
@@ -290,9 +302,9 @@ We can now do a more formal assesment of the normality of each variable.
 ggplot(pollution, aes(sample=valororig)) + stat_qq(size=.5) + facet_wrap('parametro', ncol=3, scales="free")
 ```
 
-From visual inspection we can see that very few of our variables behave normally.
+From visual inspection we can see that very few of our variables behave normally. It's interesting to note the outliers are frequent among most of the parameters, where the graph for SO2, for example, is telling of a more heavy-tailed distrubtion, such as the Cauchy.
 
-Running the Shapiro-Wilk test for random samples: 
+We can confirm this by running the Shapiro-Wilk test for random samples: 
 
 ```{r}
 options(scipen=10)
@@ -355,7 +367,7 @@ gofstat(fits.cos, fitnames=plot.legend)
 ```
 
 
-For Carbon Monoxide, the plots suggest it is closer to a **Weibull** distribution, as evidenced by the CDF plot. This result is further supported by the KS statistic, which has the lowest value at the Weibull. In particular, the KS test is not statistically significant, which is evident from the Q-Q plot (quantile-quantile), and the Anderson-Darling statistics, which show very elevated values and emphasize the lack-of-fit at the tails of the distributions. 
+For **Carbon Monoxide** (CO), the plots suggest it is closer to a **Weibull** distribution, as evidenced by the CDF plot. This result is further supported by the KS statistic, which has the lowest value at the Weibull. In particular, the KS test is not statistically significant, which is evident from the Q-Q plot (quantile-quantile), and the Anderson-Darling statistics, which show very elevated values and emphasize the lack-of-fit at the tails of the distributions. 
 
 However, both the Akaike Information Criterion (AIC) and the Bayesian Information Criterion give the best fit for the Weibull as well.
 
@@ -377,7 +389,7 @@ ppcomp(fits.nos, legendtext = plot.legend)
 gofstat(fits.nos, fitnames=plot.legend)
 ```
 
-For **Nitrogen Dioxide**, the all three statistics give the lowest value for the **lognormal** distribution. Note that the value is no entirely within non-rejection threshold, but both criteria further support the adjustment.
+For **Nitrogen Dioxide** (NO2), all three statistics give the lowest value for the **lognormal** distribution. Note that the value is not entirely within the non-rejection threshold, but both criteria (AIC and BIC) further support the adjustment.
 
 
 
@@ -463,7 +475,7 @@ gofstat(fits.so2, fitnames = plot.legend)
 ```
 
 
-For **Sulfur Dioxide**, the KS statistic best approaches a **lognormal** distribution, a theory that's supported by the CVM and AD statistics, as well as the AIC and BIC. Note that the KS statistic is not entirely within the non-rejection threshold, which is evidenced by the Q-Q plot which suggests lack-of-fit at the distribution tails and which can be in turn plainly seen in both the CDF and density plots.
+For **Sulfur Dioxide** (SO2), the KS statistic best approaches a **lognormal** distribution, a theory that's supported by the CVM and AD statistics, as well as the AIC and BIC. Note that the KS statistic is not entirely within the non-rejection threshold, which is evidenced by the Q-Q plot which suggests lack-of-fit at the distribution tails and which can be in turn plainly seen in both the CDF and density plots.
 
 
 
@@ -497,9 +509,6 @@ For **temperature** (TMP), the statistics, criteria and graphs all immediately s
 ## Discussion
 
 ## Conclusions
-
-
-
 
 
 
