@@ -5,13 +5,41 @@ output: html_notebook
 
 ## Introduction
 
+It's a known fact that the global warming and climate change crisis is one of the greatest challenges of our generation. We can see the effects of this in our every day lives and increasingly at a magnified scale all over the planet.
 
-Analysis questions: 
+One of the more important factors in climate change is anthropogenic, and we have become increasingly aware of this and our own impact in this phenomenon. 
+
+One of the more studied reasons for global warming has been the alarmingly high and rising levels of pollution in the atmosphere. We have known for some time that specific human activities like transportation, minery and agriculture contribute greatly to this increase.
+
+In this study I'd like to explore the relationship between transportation activities (traffic), and pollution levels for the city of Monterrey, MX. 
+
+
+#### The case for Monterrey
+
+Monterrey was named the #1 most polluted city in Latin America by the WHO in 2016. As Mexico's primary hub of industrial activity and economic growth, a great deal of pollution is generated from the economic activity and the day to day activities of its inhabitants. 
+
+The lack of viable transportation infrastructure for public transportation further complicates this problem, as 56% of the population uses a car for their day to day activities. This scenario has led us to the hypothesis that transportation (both public & private) is the main contributor to pollution levels.
+
+While there a considerable amount of literature on the relationship between traffic and pollution, very little is available at the local level. 
+
+It is in light of the previous facts that I think it's important to explore this relationship further at the local level, so as to better guide public policy and raise awareness for the mitigation of this issue in my city.
+
+
+### Objective
+
+The overall objective of this study is to explore the relationship between daily pollution levels for a series of pollutants and traffic patterns. Specifically, I would like to answer the following analysis questions: 
 
 1. How is traffic behaviour correlated with pollutants in the atmosphere?
 2. How does this vary by season?
 3. Given a set of traffic patterns in a given time range, can you accurately predict the pollution levels for that area? (or are more factors involved?) (i.e. is traffic a good predictor for pollution)
 4. Is pollution level a measurable proxy for traffic?
+
+
+Two datasets will be used for this purpose:
+
+1. SINAICA's daily pollution levels
+2. Waze traffic jam data 
+
 
 <!-- TODO: Some intro on why we should be analyzing traffic pattern data -->
 
@@ -63,6 +91,7 @@ pollution <- do.call(bind_rows, lapply(dirs, function(x){
 	}))
 }))
 ```
+
 
 
 
