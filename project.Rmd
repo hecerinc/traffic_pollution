@@ -3,6 +3,7 @@ title: "Muvit: Traffic patterns and pollution"
 output: html_notebook
 ---
 
+
 ## Introduction
 
 It's a known fact that the global warming and climate change crisis is one of the greatest challenges of our generation. We can see the effects of this in our every day lives and increasingly at a magnified scale all over the planet.
@@ -95,6 +96,8 @@ pollution <- do.call(bind_rows, lapply(dirs, function(x){
 
 
 
+
+
 ## Exploratory Analysis
 
 ### Pollution (SINAICA)
@@ -144,7 +147,7 @@ levels(pollution$estacionesid) # stations
 summary(pollution$validoorig)
 ```
 
-For the whole range of data available in the API, there's roughly a range of 10 months available (January 2017 to April 2018). 
+For the whole range of data available in the API, there's roughly a range of 10 months available (June 2017 to April 2018). 
 
 We can also get rid of `validoorig` as it provides no useful information.
 
@@ -214,12 +217,88 @@ Once we know what our data looks like, some reasonable questions to ask is, do w
 sum(is.na(pollution$valororig))
 ```
 
+We don't, which is good. Looking at the data at a station level: 
+
+```{r}
+# Create a map of station names to ID
+stations <- list("Apodaca"=146, "Escobedo"=144, "García"=145, "Juárez"=147, "La Pastora"=143, "Obispado"=141, "Pueblo Serena"= 426, "San Bernabé"=140, "San Nicolás"=142, "Santa Catarina"=139, "San Pedro"=148, "Universidad"= 425)
+histsForStation <- function(stationname) {
+	ggplot(filter(pollution, estacionesid==stations[[stationname]]), aes(valororig)) + geom_histogram(binwidth=.5, fill="steelblue") +  facet_wrap('parametro', ncol=3, scales = 'free') + labs(title=stationname,  x="Measured value", y="Count")
+}
+```
 
 
-# Traffic Jams (Waze)
+#### Apodaca
+
+```{r}
+histsForStation("Apodaca")
+```
 
 
 
+#### Escobedo
+
+```{r}
+histsForStation("Escobedo")
+```
+
+#### García
+
+```{r}
+histsForStation("García")
+```
+
+#### Juárez
+
+```{r}
+histsForStation("Juárez")
+```
+
+#### La Pastora
+
+```{r}
+histsForStation("La Pastora")
+```
+
+#### Obispado
+
+```{r}
+histsForStation("Obispado")
+```
+
+#### San Bernabé
+
+```{r}
+histsForStation("San Bernabé")
+```
+
+#### San Nicolás
+
+```{r}
+histsForStation("San Nicolás")
+```
+
+#### Santa Catarina
+
+```{r}
+histsForStation("Santa Catarina")
+```
+
+#### San Pedro
+
+```{r}
+histsForStation("San Pedro")
+```
+
+
+
+#### Universidad
+
+```{r}
+histsForStation("Universidad")
+```
+
+Note that there are a lot of missing values for PM2.5 especially and that SO2, O3, and NO2 have very small ranges (in the hundreths or thousandths), which is why they intially all show as full bars, as the binwidth we chose does not work for such small values. We will ammend this later on by plotting each individual histogram with an appropriate range.
 
 
 ## Statistical Analysis
@@ -245,7 +324,7 @@ pollutants <- levels(pollution$parametro)
 ```{r}
 calculateStats <- function(pollutant) {
 	poll <- filter(pollution, parametro == pollutant)
-	data.frame(pollutant = pollutant, mean = mean(poll$valororig, na.rm=T), variance = var(poll$valororig, na.rm=T), standard.deviation = sd(poll$valororig, na.rm=T), skewness = skewness(poll$valororig, na.rm=T), kurtosis = kurtosis(poll$valororig, na.rm=T))
+	data.frame(pollutant = pollutant, mean = mean(poll$valororig, na.rm=T), median=median(poll$valororig, na.rm=T), variance = var(poll$valororig, na.rm=T), standard.deviation = sd(poll$valororig, na.rm=T), skewness = skewness(poll$valororig, na.rm=T), kurtosis = kurtosis(poll$valororig, na.rm=T))
 }
 ```
 
@@ -254,9 +333,23 @@ calculateStats <- function(pollutant) {
 do.call(rbind, lapply(pollutants, calculateStats))
 ```
 
-# INTERPRETATION HERE
+We can immediately observe that for PM10 and PM2.5 the spread (variance) is huge, but the median remains at lower values, which indicate some pretty big outliers. For most of the data, the central tendency measurements are generally consistent with what we observed from the histograms. 
 
-> De las variables que consideraste interesantes en la etapa 1. Incluye en esta sección la interpretación de los estadísticos descriptivos sobre dichas variables. Para cada una de las variables, incluye también tu inferencia sobre que distribución de probabilidad explica el comportamiento de la variable.
+For these two variables we have huge values for kurtosis and skewness, which means we have very long tails, which is consistent with our outlier suspicion.
+
+We can see the range for SO2, NO2, and O3 being extremeley small, which is why the binwidth we chose for the histograms was poor for that type of data.
+
+It's normal for the temperature, for example, to have that variance. 
+
+We will need the combination of date and time to actually plot the time series:
+
+```{r}
+pollution <- rename(pollution, fecha.orig = date)
+pollution$date <- as.POSIXct(paste(pollution$fecha, pollution$hora), format="%Y-%m-%d %H")
+```
+
+
+
 
 ##### Histograms
 
@@ -400,6 +493,10 @@ For **Carbon Monoxide** (CO), the plots suggest it is closer to a **Weibull** di
 
 However, both the Akaike Information Criterion (AIC) and the Bayesian Information Criterion give the best fit for the Weibull as well.
 
+```{r}
+summary(weibulls[[1]])
+```
+
 
 
 #### NO2
@@ -420,6 +517,10 @@ gofstat(fits.nos, fitnames=plot.legend)
 
 For **Nitrogen Dioxide** (NO2), all three statistics give the lowest value for the **lognormal** distribution. Note that the value is not entirely within the non-rejection threshold, but both criteria (AIC and BIC) further support the adjustment.
 
+```{r}
+summary(lnorms[[2]])
+```
+
 
 
 #### O3
@@ -439,7 +540,12 @@ gofstat(fits.o3, fitnames = plot.legend)
 
 For **Ozone** (O3), it is immediately evident from all four plots that the readings approach a Weibull or Gamma distribution. Choosing between the two is not as evident a task, as both the KS test and the Cramer-von Mises test suggest the Weibull has a better fit, while the Anderson-Darling, AIC, and BIC values suggest the Gamma is a better fit (although the latter two by a very small margin).
 
-In this case, the Q-Q plot suggests a better fit at the tails for the Weibull, while the P-P plot suggests very similar fits for the distribution centers, so we shall choose the **Weibull**.
+In this case, the Q-Q plot suggests a better fit at the tails for the Weibull, while the P-P plot suggests very similar fits for the distribution centers, so we shall choose the **Weibull**. The fitting has the following parameters:
+
+```{r}
+summary(weibulls[[3]])
+```
+
 
 
 #### PM10
@@ -461,6 +567,13 @@ gofstat(fits.pm10, fitnames=plot.legend)
 For **PM10** values, the readings are very clearly best approached by the **lognormal**, as is suggested by the KS statistic, where the lognormal is the only statistically significant value. The Cramer-von Mises (CVM) and Anderson-Darling (AD) statistics, as well as the AIC and BIC, all further support this statement.
 
 An interesting thing to note is that the Q-Q plot suggests high lack-of-fit for all 5 fitted distributions at the tails, which is probably explained by the high right-skewed behaviour of the data, which is highly concentrated on smaller values.
+
+The lognormal distribution has the following parameters:
+
+```{r}
+summary(lnorms[[4]])
+```
+
 
 
 #### PM2.5
@@ -484,7 +597,14 @@ PM 2.5 values are also very highly concentrated on smaller values, with a few ex
 pm25.hist
 ```
 
-Whilst the KS and CVM statistics suggest a Weibull approximation for **PM2.5** data, the AD value (at Inf), suggests a terrible approximation at the distribution tails. It's interesting to note that while the KS and CVM suggest a Weibull distribution, followed perhaps by the Gamma, both the AIC and BIC criteria suggest a **lognormal** to be a better fit.
+Whilst the KS and CVM statistics suggest a Weibull approximation for **PM2.5** data, the AD value (at Inf), suggests a terrible approximation at the distribution tails. It's interesting to note that while the KS and CVM suggest a Weibull distribution, followed perhaps by the Gamma, both the AIC and BIC criteria suggest a **lognormal** to be a better fit with the following parameters:
+
+```{r}
+summary(lnorms[[5]])
+```
+
+
+
 
 
 #### SO2
@@ -507,6 +627,11 @@ gofstat(fits.so2, fitnames = plot.legend)
 For **Sulfur Dioxide** (SO2), the KS statistic best approaches a **lognormal** distribution, a theory that's supported by the CVM and AD statistics, as well as the AIC and BIC. Note that the KS statistic is not entirely within the non-rejection threshold, which is evidenced by the Q-Q plot which suggests lack-of-fit at the distribution tails and which can be in turn plainly seen in both the CDF and density plots.
 
 
+```{r}
+summary(lnorms[[6]])
+```
+
+
 
 
 #### TMP
@@ -526,21 +651,86 @@ gofstat(fits.tmp, fitnames = plot.legend)
 
 For **temperature** (TMP), the statistics, criteria and graphs all immediately suggest a **Weibull** distribution.
 
+```{r}
+summary(weibulls[[7]])
+```
+
 
 
 ### Critical variable
 
-
-## Bayesian Network Analysis
-
+As **CO** seems to be the best defined data, with a suitable range, and relatively good adjustment to a Weibull distribution, we shall perform the initial time series analysis over this variable.
 
 
-## Discussion
+## ARIMA
 
-## Conclusions
+Training an ARIMA model will allow us to fit the data we currently have into a time series model that will allow us to predict future values for concentrations of CO.
+
+We're using an MAR(2)
+
+We will choose a subset of the data for this model:
+
+```{r}
+co139 <- filter(pollution, estacionesid == 139, parametro == "CO")
+```
+
+```{r}
+ggplot(co139, aes(date, valororig)) + geom_line() + theme_gray() + labs(title="Hourly CO values for Santa Catarina", x="Date", y = "Measurement", subtitle="From Sep. 2017 to Apr. 2018")
+```
+
+
+We can immediately see that there is a trend which means this is not a stationary series.  This might be worrying because CO values have been increasing in baseline (albeit a noted cycle in every day). Additionally, the gaps in data become very obvious in this plot.
+
+If we look at the differentiated data:
+
+```{r}
+tsdisplay(diff(co139$valororig))
+```
+
+It looks stationary so we have enough to train the model.
+
+### Training an ARIMA model for this data
+
+```{r}
+library(forecast)
+fit.arima <- auto.arima(co139$valororig, seasonal=F)
+```
+
+```{r}
+fit.arima
+```
+
+The `auto.arima` function helps us choose a correct ARIMA model for our data. In this case we're working with a AR(2,1,1) model.
+
+
+Given the fitted model we can now forecast the new values:
+
+```{r}
+plot(forecast(fit.arima))
+```
 
 
 
+## Reflexiones
+
+
+Personalmente, creo que nunca me habían retado tanto en un proyecto como en este. Parte de ello fue que yo mismo elegí un proyecto muy ambicioso, pero la dinámica también permitía ser muy creativo y generar algo que fuera realmente de valor, lo cual es muy diferente a proyectos que he tenido en otras clases.
+
+El haber elegido un dataset tan complejo como el de la SINAICA implicó problemas en todos y cada uno de los pasos del proceso, desde la obtención, hasta el modelado, pasando por la limpieza y adaptación.
+
+La falta de datos y de infraestructura implicaron que el modelo no fuera tan bueno y que el proceso fuera más complicado de lo que originalmente tenía previsto. 
+
+Desgraciadamente, ello también es un reflejo de la poca importancia que tienen los datos en México y su correcta recolección y transparencia y acceso, incluso en datos tan importantes como los de la contaminación. Si Monterrey, que es la ciudad más contaminada, no recolecta sus datos de forma correcta y les da  la importancia que merece como insumo para generación de políticas públicas, el futuro parece sólo empeorar en cuestión de cuidados del medio ambiente. 
+
+Como tecnólogo, creo que tenemos que hacer un tradeoff a la hora de diseñar sistemas en pos de los intereses de todos los grupos involucrados. El ideal sería siempre hacer todo en pos de los usuarios, pero generalmente los intereses de las personas que financian los proyectos y de sus usuarios tienden a ser conflictivos.
+
+Esta es una de tantas razones por las que creo que a pesar de que a los jóvenes (y no tan jóvenes) nos interesa y preocupa mucho el tema del medio ambiente y la contaminación, no se ha visto una respuesta por parte del gobierno en materia de política pública y ni siquiera por parte de la industria privada. 
+
+Creo firmemente que construir sistemas y política basada en datos, nos permitirá tomar decisiones informadas sobre los sistemas que diseñamos y políticas que implementamos, al contrario de servir intereses diferentes o hacerlo por intuición. Me parece que ahí radica la solución a tantos problemas que tenemos que serían fácilmente solucionables si existiera la infraestructura y disposición o voluntad política para hacer las cosas correctamente. 
+
+Hacer ello implicaría que pudiéramos vivir en una ciudad con aire respirable, y en consecuencia reducir enfermedades de vía respiratoria, mejorar infraestructura de transporte y en general tener una mejor calidad de vida para todos. 
+
+En cuanto al medio ambiente, sobran las razones para ejecutar proyectos como el aquí propuesto. Tener la ciudad más contaminada no es fortuito, y si no actuamos más allá de pequeñas intervenciones, la situación empeorará considerablmente y será mucho más difícil revertir el daño.
 
 
 
